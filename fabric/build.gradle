@@ -1,0 +1,181 @@
+plugins { id 'net.fabricmc.fabric-loom-remap' }
+
+base { archivesName = 'pous-colored-lights' }
+
+repositories { mavenCentral() }
+configurations {
+    sharedCore { canBeResolved = true; canBeConsumed = false }
+    sharedMain { canBeResolved = true; canBeConsumed = false }
+    sharedClient { canBeResolved = true; canBeConsumed = false }
+    sharedAssets { canBeResolved = true; canBeConsumed = false }
+}
+dependencies {
+    sharedCore project(path: ':core', configuration: 'sharedJava')
+    sharedMain project(path: ':common', configuration: 'sharedJava')
+    sharedClient project(path: ':common', configuration: 'sharedClientJava')
+    sharedAssets project(path: ':common', configuration: 'sharedResources')
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings "net.fabricmc:yarn:${yarn_mappings}:v2"
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    if (project.hasProperty('compatTest')) {
+        modLocalRuntime fileTree(rootProject.file('compatibility/mods')) { include '*.jar' }
+        // Loom strips nested JARs when remapping local mods. Keep Iris's shader
+        // compiler libraries on the development runtime classpath explicitly.
+        runtimeOnly fileTree(rootProject.file('compatibility/libraries')) { include '*.jar'; exclude 'fabric-*.jar' }
+        if (project.hasProperty('compatProfile')) {
+            def profile = project.property('compatProfile').toString()
+            if (!(profile ==~ /[a-z0-9-]+/)) throw new GradleException('Invalid compatibility profile')
+            def profileRoot = rootProject.file("compatibility/profiles/${profile}")
+            if (!profileRoot.isDirectory()) throw new GradleException("Unknown compatibility profile: ${profile}")
+            modLocalRuntime fileTree(new File(profileRoot, 'mods')) { include '*.jar' }
+            runtimeOnly fileTree(new File(profileRoot, 'libraries')) { include '*.jar' }
+        }
+    }
+    if (project.hasProperty('contentProfile')) {
+        def contentProfile = project.property('contentProfile').toString()
+        if (!(contentProfile ==~ /[a-z0-9-]+/)) throw new GradleException('Invalid content profile')
+        modLocalRuntime fileTree(rootProject.file("compatibility/profiles/${contentProfile}/mods")) { include '*.jar' }
+        runtimeOnly fileTree(rootProject.file("compatibility/profiles/${contentProfile}/libraries")) { include '*.jar' }
+    }
+}
+loom {
+    splitEnvironmentSourceSets()
+    accessWidenerPath = file('src/main/resources/prism_lights.accesswidener')
+    mods { 'prism_lights' { sourceSet sourceSets.main; sourceSet sourceSets.client } }
+}
+if (project.hasProperty('lightingTest')) {
+    loom.runs.client {
+        runDir ('../' + ('run-lighting-validation'))
+        vmArg '-Dprism.lightingTest=true'
+        programArgs '--quickPlaySingleplayer', 'New World', '--username', 'Player659'
+    }
+}
+if (project.hasProperty('productTest')) {
+    loom.runs.client {
+        runDir ('../' + (project.hasProperty('productQa') ? 'run-occlusion-validation' : 'run-lighting-validation'))
+        vmArg '-Dprism.productTest=true'
+        programArgs '--quickPlaySingleplayer', 'New World', '--username', 'Player659'
+    }
+}
+if (project.hasProperty('interactiveTest')) {
+    loom.runs.client {
+        runDir ('../' + ('run-lighting-validation'))
+        programArgs '--quickPlaySingleplayer', 'New World', '--username', 'Player659'
+    }
+}
+if (project.hasProperty('occlusionTest')) {
+    loom.runs.client {
+        runDir ('../' + ('run-occlusion-validation'))
+        vmArg '-Dprism.occlusionTest=true'
+        programArgs '--quickPlaySingleplayer', 'New World', '--username', 'Player659'
+    }
+}
+if (project.hasProperty('compatibilityTest')) {
+    loom.runs.client {
+        runDir ('../' + ('run-occlusion-validation'))
+        vmArg '-Dprism.compatibilityTest=true'
+        programArgs '--quickPlaySingleplayer', 'New World', '--username', 'Player659'
+    }
+}
+if (project.hasProperty('nightColorTest')) {
+    loom.runs.client {
+        runDir ('../' + ('run-occlusion-validation'))
+        vmArg '-Dprism.nightColorTest=true'
+        programArgs '--quickPlaySingleplayer', 'New World', '--username', 'Player659'
+    }
+}
+if (project.hasProperty('colorResponseTest')) {
+    loom.runs.client {
+        runDir ('../' + ('run-occlusion-validation'))
+        vmArg '-Dprism.colorResponseTest=true'
+        if (project.hasProperty('responseDaylightOnly')) vmArg '-Dprism.responseDaylightOnly=true'
+        programArgs '--quickPlaySingleplayer', 'New World', '--username', 'Player659'
+    }
+}
+if (project.hasProperty('fireworkTest')) {
+    loom.runs.client {
+        runDir ('../' + ('run-occlusion-validation'))
+        vmArg '-Dprism.fireworkTest=true'
+        programArgs '--quickPlaySingleplayer', 'New World', '--username', 'Player659'
+    }
+}
+if (project.hasProperty('fireworkServerTest')) {
+    loom.runs.server {
+        runDir ('../' + ('run-firework-server-validation'))
+        vmArg '-Dprism.fireworkServerTest=true'
+        programArgs 'nogui'
+    }
+}
+if (project.hasProperty('candleServerTest')) {
+    loom.runs.server {
+        def qaServerDirectory=project.findProperty('qaServerDirectory') ?: 'run-candle-server-validation'
+        if (!(qaServerDirectory ==~ /run-candle-server-validation(?:-opt)?/)) throw new GradleException('Invalid isolated server directory')
+        runDir ('../'+qaServerDirectory)
+        vmArg '-Dprism.candleServerTest=true'
+        programArgs 'nogui'
+    }
+}
+if (project.hasProperty('designTest')) {
+    loom.runs.client {
+        runDir ('../' + ('run-design-validation'))
+        vmArg '-Dprism.designTest=true'
+        if (project.hasProperty('stressTest')) vmArg '-Dprism.stressTest=true'
+        programArgs '--quickPlaySingleplayer', 'Pou Showcase', '--username', 'Player', '--width', '1600', '--height', '900'
+    }
+}
+if (project.hasProperty('capacityTest')) {
+    loom.runs.client {
+        runDir ('../' + ('run-capacity-validation'))
+        vmArg '-Dprism.capacityTest=true'
+        programArgs '--quickPlaySingleplayer', 'Pou Showcase', '--username', 'Player', '--width', '1600', '--height', '900'
+    }
+}
+if (project.hasProperty('responseRenderer')) {
+    def renderer = project.property('responseRenderer').toString()
+    if (!(renderer in ['bsl', 'unbound', 'reimagined', 'sodium']))
+        throw new GradleException('Unknown response renderer')
+    loom.runs.client { vmArg "-Dprism.responseRenderer=${renderer}" }
+}
+if (project.hasProperty('showcase')) {
+    loom.runs.client {
+        runDir ('../' + ('run-showcase'))
+        vmArg '-Dprism.showcaseBuild=true'
+        if (project.hasProperty('showcaseQa')) vmArg '-Dprism.showcaseQa=true'
+        programArgs '--quickPlaySingleplayer', 'Pou Showcase', '--username', 'Player', '--width', '1600', '--height', '900'
+    }
+}
+if (project.hasProperty('performanceTest')) {
+    def performanceRun=project.findProperty('performanceRun') ?: 'run-performance-validation'
+    if (!(performanceRun ==~ /run-performance-[a-z0-9-]+/)) throw new GradleException('Invalid performance run directory')
+    loom.runs.client {
+        runDir ('../' + (performanceRun))
+        vmArg '-Dprism.performanceTest=true'
+        if (project.hasProperty('lightCacheTest')) {
+            // Run correctness checks instead of timings in the same isolated-copy workflow.
+            vmArg '-Dprism.performanceTest=false'
+            vmArg '-Dprism.lightCacheTest=true'
+        }
+        programArgs '--quickPlaySingleplayer', 'Pou Showcase', '--username', 'Player', '--width', '1600', '--height', '900'
+    }
+}
+processResources { inputs.property 'version', project.version; filesMatching('fabric.mod.json') { expand 'version': project.version } }
+tasks.withType(JavaCompile).configureEach { options.release = 17; options.encoding = 'UTF-8' }
+java { withSourcesJar(); sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
+jar { from(rootProject.file('LICENSE')) }
+
+
+// Compile the same shared sources with the loader's mappings and Mixin processor.
+// Source sharing avoids publishing an installable common mod or nested Minecraft JAR.
+sourceSets {
+    main {
+        java.srcDirs configurations.sharedCore, configurations.sharedMain
+        resources.srcDirs configurations.sharedAssets
+    }
+    client { java.srcDirs configurations.sharedClient }
+}
+if (!['lightingTest','productTest','interactiveTest','occlusionTest','compatibilityTest','nightColorTest','colorResponseTest','fireworkTest','designTest','capacityTest','showcase','performanceTest'].any { project.hasProperty(it) }) {
+    loom.runs.client { runDir ('../' + ('run')) }
+}
+loom.runs.server { if (!project.hasProperty('fireworkServerTest') && !project.hasProperty('candleServerTest')) runDir ('../' + ('run')) }
+// Flags above override the default; reapply the default only when no scene is requested.

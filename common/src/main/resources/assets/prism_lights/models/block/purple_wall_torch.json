@@ -1,0 +1,6 @@
+{
+  "textures": {
+    "torch": "prism_lights:block/purple_torch"
+  },
+  "parent": "minecraft:block/template_torch_wall"
+}

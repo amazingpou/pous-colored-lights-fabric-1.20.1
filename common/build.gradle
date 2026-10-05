@@ -1,0 +1,42 @@
+plugins { id 'net.fabricmc.fabric-loom-remap' }
+
+base { archivesName = 'pous-colored-lights-common-dev' }
+repositories { mavenCentral() }
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings "net.fabricmc:yarn:${yarn_mappings}:v2"
+    implementation project(':core')
+    // Loom marks the mapped game classes with Environment/EnvType. This is
+    // compile-only annotation tooling, not a common runtime or Fabric API dependency.
+    compileOnly("net.fabricmc:fabric-loader:${fabric_loader_version}") { transitive = false }
+}
+loom {
+    splitEnvironmentSourceSets()
+    // Vanilla constructor also widened by Fabric API in the reference runtime.
+    // Other loaders must provide their equivalent access configuration.
+    accessWidenerPath = rootProject.file('fabric/src/main/resources/prism_lights.accesswidener')
+    // This is a source module, not a loader/game entrypoint. Root task selectors
+    // must never start a second game through the common project.
+    runs.configureEach { ideConfigGenerated(false) }
+}
+tasks.matching { it.name in ['runClient', 'runServer'] }.configureEach { enabled = false }
+dependencies {
+    clientCompileOnly("net.fabricmc:fabric-loader:${fabric_loader_version}") { transitive = false }
+}
+java { withSourcesJar(); toolchain { languageVersion = JavaLanguageVersion.of(21) } }
+tasks.withType(JavaCompile).configureEach { options.release = 17; options.encoding = 'UTF-8' }
+// Compile independently to catch accidental loader dependencies. Only loader JARs
+// are distributable; this module has no entrypoints or mod metadata.
+tasks.named('remapJar') { enabled = false }
+tasks.named('remapSourcesJar') { enabled = false }
+
+configurations {
+    sharedJava { canBeResolved = false; canBeConsumed = true }
+    sharedClientJava { canBeResolved = false; canBeConsumed = true }
+    sharedResources { canBeResolved = false; canBeConsumed = true }
+}
+artifacts {
+    sharedJava sourceSets.main.java.sourceDirectories.singleFile
+    sharedClientJava sourceSets.client.java.sourceDirectories.singleFile
+    sharedResources sourceSets.main.resources.sourceDirectories.singleFile
+}

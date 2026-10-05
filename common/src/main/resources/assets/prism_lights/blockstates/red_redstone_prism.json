@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=true": {
+      "model": "prism_lights:block/red_redstone_prism"
+    },
+    "active=false": {
+      "model": "prism_lights:block/red_redstone_prism_off"
+    }
+  }
+}

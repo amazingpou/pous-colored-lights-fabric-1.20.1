@@ -1,0 +1,34 @@
+{
+  "parent": "minecraft:recipes/root",
+  "criteria": {
+    "has_firework": {
+      "trigger": "minecraft:inventory_changed",
+      "conditions": {
+        "items": [
+          {
+            "items": [
+              "minecraft:firework_rocket"
+            ]
+          }
+        ]
+      }
+    },
+    "has_recipe": {
+      "trigger": "minecraft:recipe_unlocked",
+      "conditions": {
+        "recipe": "prism_lights:firework_launcher"
+      }
+    }
+  },
+  "requirements": [
+    [
+      "has_firework",
+      "has_recipe"
+    ]
+  ],
+  "rewards": {
+    "recipes": [
+      "prism_lights:firework_launcher"
+    ]
+  }
+}

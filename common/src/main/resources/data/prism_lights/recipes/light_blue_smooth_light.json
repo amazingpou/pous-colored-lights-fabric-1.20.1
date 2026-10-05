@@ -1,0 +1,13 @@
+{
+  "category": "building",
+  "result": {
+    "count": 1,
+    "item": "prism_lights:light_blue_smooth_light"
+  },
+  "ingredients": [
+    {
+      "item": "prism_lights:light_blue_prism"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless"
+}

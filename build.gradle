@@ -1,0 +1,182 @@
+plugins {
+    id 'base'
+    id 'net.fabricmc.fabric-loom-remap' version '1.14.10' apply false
+}
+
+allprojects {
+    version = rootProject.property('mod_version')
+    group = 'dev.prismlights'
+}
+
+// Existing wrapper commands remain valid after the move to loader modules.
+tasks.named('check') {
+    dependsOn ':core:check', ':common:compileJava', ':common:compileClientJava', ':fabric:check', 'verifyAssets', 'verifyArchitecture'
+}
+tasks.register('test') { dependsOn ':core:test' }
+tasks.register('runClient') { dependsOn ':fabric:runClient' }
+tasks.register('runServer') { dependsOn ':fabric:runServer' }
+tasks.register('stageFabric', Sync) {
+    dependsOn ':fabric:remapJar', ':fabric:remapSourcesJar'
+    from project(':fabric').layout.buildDirectory.dir('libs')
+    include 'pous-colored-lights-*.jar'
+    into layout.buildDirectory.dir('libs')
+}
+tasks.named('build') { dependsOn 'check', 'stageFabric', 'verifyFabricArchive' }
+tasks.named('clean') { dependsOn ':core:clean', ':common:clean', ':fabric:clean' }
+
+tasks.register('verifyArchitecture') {
+    doLast {
+        fileTree('core/src').matching { include '**/*.java' }.each { source ->
+            (source.text =~ /(?m)^\s*import\s+(?:static\s+)?([^\s;]+)/).each { declaration ->
+                assert declaration[1].startsWith('java.') || declaration[1].startsWith('org.junit.') : "Non-portable core dependency: ${source}"
+            }
+        }
+        fileTree('common/src').matching { include '**/*.java' }.each { source ->
+            assert !(source.text =~ /net\.fabricmc\.|net\.neoforged\.|net\.minecraftforge\./) : "Loader dependency in common: ${source}"
+        }
+        ['common', 'fabric'].each { module ->
+            fileTree("${module}/src/main/java").matching { include '**/*.java' }.each { source ->
+                assert !(source.text =~ /net\.minecraft\.client\.(?!item\.TooltipContext\b)|dev\.prismlights\.client\./) : "Client dependency in server sources: ${source}"
+            }
+        }
+        assert !file('common/src/main/resources/fabric.mod.json').exists()
+        assert !file('common/src/main/resources/prism_lights.client.mixins.json').exists()
+    }
+}
+
+tasks.register('verifyLaunchConfiguration') {
+    doLast {
+        assert !project(':common').tasks.named('runClient').get().enabled
+        assert !project(':common').tasks.named('runServer').get().enabled
+        def clientScene = [lightingTest:'run-lighting-validation', productTest:project.hasProperty('productQa') ? 'run-occlusion-validation' : 'run-lighting-validation',
+            interactiveTest:'run-lighting-validation', occlusionTest:'run-occlusion-validation', compatibilityTest:'run-occlusion-validation',
+            nightColorTest:'run-occlusion-validation', colorResponseTest:'run-occlusion-validation', fireworkTest:'run-occlusion-validation',
+            designTest:'run-design-validation', capacityTest:'run-capacity-validation', showcase:'run-showcase',
+            performanceTest:project.findProperty('performanceRun') ?: 'run-performance-validation']
+            .findAll { flag, directory -> project.hasProperty(flag) }.values().toList()
+        def expectedClient = clientScene ? clientScene.last() : 'run'
+        def loader = project(':fabric')
+        def launches = loader.extensions.getByName('loom').runs
+        // Loom applies the working directory inside exec(), not when JavaExec is
+        // constructed. Check its public run settings before starting any world.
+        assert loader.file(launches.getByName('client').runDir).canonicalFile == file(expectedClient).canonicalFile
+        def expectedServer = project.hasProperty('candleServerTest') ? 'run-candle-server-validation' : project.hasProperty('fireworkServerTest') ? 'run-firework-server-validation' : 'run'
+        assert loader.file(launches.getByName('server').runDir).canonicalFile == file(expectedServer).canonicalFile
+    }
+}
+tasks.named('check') { dependsOn 'verifyLaunchConfiguration' }
+
+tasks.register('verifyFabricArchive') {
+    dependsOn 'stageFabric'
+    doLast {
+        def artifact = layout.buildDirectory.file("libs/pous-colored-lights-${version}.jar").get().asFile
+        def zip = new java.util.zip.ZipFile(artifact)
+        try {
+            def names = zip.entries().collect { it.name }
+            assert names.size() == names.toSet().size() : 'Duplicate archive entries'
+            ['ColorMixer', 'ShaderPatcher', 'LauncherShotLayout', 'PrismLights', 'PrismFireworkEntity'].each {
+                assert names.contains("dev/prismlights/${it}.class".toString())
+            }
+            assert names.contains('dev/prismlights/platform/PlatformServices.class')
+            assert names.contains('dev/prismlights/client/LightField.class')
+            assert names.contains('dev/prismlights/fabric/PrismFabric.class')
+            assert names.contains('dev/prismlights/fabric/PrismFabricClient.class')
+            assert names.contains('prism_lights.client.mixins.json')
+            def metadata = new groovy.json.JsonSlurper().parse(zip.getInputStream(zip.getEntry('fabric.mod.json')))
+            assert metadata.id == 'prism_lights' && metadata.version == version
+            assert metadata.entrypoints.main == ['dev.prismlights.fabric.PrismFabric']
+            assert metadata.entrypoints.client == ['dev.prismlights.fabric.PrismFabricClient']
+            assert names.count { it.startsWith('data/prism_lights/recipes/') && it.endsWith('.json') } == 113
+            fileTree('common/src/main/resources').each { source ->
+                def name = file('common/src/main/resources').toPath().relativize(source.toPath()).toString().replace('\\', '/')
+                def entry = zip.getEntry(name)
+                assert entry != null : "Missing shared resource: ${name}"
+                assert Arrays.equals(source.bytes, zip.getInputStream(entry).readAllBytes()) : "Changed resource: ${name}"
+            }
+        } finally { zip.close() }
+    }
+}
+
+tasks.register('verifyAssets') {
+    doLast {
+        def root = file('common/src/main/resources')
+        def parser = new groovy.json.JsonSlurper()
+        def metadata = parser.parse(file('fabric/src/main/resources/fabric.mod.json'))
+        assert metadata.description == 'Colored lights for minecraft'
+        assert file('common/src/main/resources/data/minecraft/tags/blocks/candles.json').exists()
+        assert file('common/src/main/resources/data/minecraft/tags/items/candles.json').exists()
+        assert file('common/src/main/resources/data/prism_lights/functions/demo.mcfunction').exists()
+        assert file('common/src/main/resources/data/prism_lights/functions/showcase.mcfunction').exists()
+        assert !file('common/src/main/resources/data/minecraft/tags/block').exists()
+        assert Arrays.equals(new File(root, metadata.icon).bytes, file('referencias/mod-icon.png').bytes)
+        def states = fileTree(new File(root, 'assets/prism_lights/blockstates')).matching { include '*.json' }.files
+        assert states.size() == 144 : 'Expected 16 colors across nine blockstate families'
+        fileTree(root).matching { include '**/*.json' }.each { parser.parse(it) }
+        def launcher = parser.parse(new File(root, 'assets/prism_lights/models/item/firework_launcher.json'))
+        assert launcher.elements.size() >= 4
+        assert launcher.display.firstperson_righthand
+        assert launcher.textures.glow == 'prism_lights:item/launcher_rainbow'
+        assert new File(root,'assets/prism_lights/textures/item/launcher_rainbow.png').exists()
+        assert parser.parse(new File(root, 'data/prism_lights/recipes/firework_launcher.json')).result.item == 'prism_lights:firework_launcher'
+        assert parser.parse(new File(root, 'assets/prism_lights/lang/pt_br.json'))['item.prism_lights.firework_launcher']
+        def originalPrisms = states.findAll { it.name.endsWith('_prism.json') && !it.name.endsWith('_redstone_prism.json') }
+        assert originalPrisms.size() == 16
+        originalPrisms.each { stateFile ->
+            def name = stateFile.name.replace('.json', '')
+            def state = parser.parse(stateFile)
+            assert state.variants.keySet() == ['active=true', 'active=false'] as Set
+            state.variants.values().each { variant ->
+                def modelFile = new File(root, 'assets/prism_lights/models/' + variant.model.split(':')[1] + '.json')
+                assert modelFile.exists()
+                def texture = parser.parse(modelFile).textures.all.split(':')[1]
+                assert new File(root, 'assets/prism_lights/textures/' + texture + '.png').exists()
+            }
+            def recipe = parser.parse(new File(root, "data/prism_lights/recipes/${name}.json"))
+            assert recipe.result.item == "prism_lights:${name}" && recipe.result.count == 4
+            def advancement = parser.parse(new File(root, "data/prism_lights/advancements/recipes/${name}.json"))
+            assert advancement.requirements.size() == 1 && advancement.requirements[0] instanceof List
+            assert new File(root, "data/prism_lights/loot_tables/blocks/${name}.json").exists()
+        }
+        def names = originalPrisms.collect { it.name.replace('_prism.json', '') }
+        names.each { color ->
+            def candle = parser.parse(new File(root,"assets/prism_lights/blockstates/${color}_candle.json"))
+            assert candle.variants.size() == 8
+            candle.variants.values().each { assert it.model.startsWith("minecraft:block/${color}_candle_") }
+            assert parser.parse(new File(root,"assets/prism_lights/models/item/${color}_candle.json")).parent == "minecraft:item/${color}_candle"
+            def candleRecipe = parser.parse(new File(root,"data/prism_lights/recipes/${color}_candle.json"))
+            assert candleRecipe.ingredients*.item == ["minecraft:${color}_candle",'minecraft:glowstone_dust']
+            assert candleRecipe.result.item == "prism_lights:${color}_candle" && candleRecipe.result.count == 1
+            assert parser.parse(new File(root,"assets/prism_lights/particles/${color}_candle_flame.json")).textures == ['prism_lights:candle_flame']
+            ['smooth_light', 'redstone_prism', 'redstone_smooth_light', 'lantern', 'torch', 'wall_torch', 'candle', 'candle_cake'].each { kind ->
+                def id = "${color}_${kind}"
+                assert new File(root, "assets/prism_lights/blockstates/${id}.json").exists()
+                assert new File(root, "data/prism_lights/loot_tables/blocks/${id}.json").exists()
+            }
+            ['smooth_light', 'redstone_prism', 'redstone_smooth_light', 'lantern', 'torch', 'candle'].each { kind ->
+                def id = "${color}_${kind}"
+                assert new File(root, "assets/prism_lights/models/item/${id}.json").exists()
+                assert new File(root, "data/prism_lights/recipes/${id}.json").exists()
+                assert new File(root, "data/prism_lights/advancements/recipes/${id}.json").exists()
+            }
+            assert new File(root, "assets/prism_lights/textures/block/${color}_torch.png").exists()
+            assert new File(root, "assets/prism_lights/textures/block/${color}_lantern.png").exists()
+            assert new File(root, "assets/prism_lights/textures/item/${color}_lantern.png").exists()
+            ['', '_off'].each { suffix ->
+                def prism = javax.imageio.ImageIO.read(new File(root,"assets/prism_lights/textures/block/${color}_prism${suffix}.png"))
+                assert prism.getRGB(0,8) == prism.getRGB(8,0)
+                assert prism.getRGB(1,8) != prism.getRGB(0,8) : 'The outer black border must be one pixel'
+                // Redstone lamps deliberately share the conventional prism artwork.
+                assert java.util.Arrays.equals(
+                    new File(root, "assets/prism_lights/textures/block/${color}_prism${suffix}.png").bytes,
+                    new File(root, "assets/prism_lights/textures/block/${color}_redstone_prism${suffix}.png").bytes)
+                def smooth = javax.imageio.ImageIO.read(new File(root, "assets/prism_lights/textures/block/${color}_smooth_light${suffix}.png"))
+                def pixel = smooth.getRGB(0, 0)
+                def poweredModel = parser.parse(new File(root,"assets/prism_lights/models/block/${color}_redstone_smooth_light${suffix}.json"))
+                assert poweredModel.textures.all == "prism_lights:block/${color}_smooth_light${suffix}"
+                for (int y=0; y<smooth.height; y++) for (int x=0; x<smooth.width; x++)
+                    assert smooth.getRGB(x, y) == pixel : 'Smooth light must have no borders or pattern'
+            }
+        }
+    }
+}
+check.dependsOn verifyAssets

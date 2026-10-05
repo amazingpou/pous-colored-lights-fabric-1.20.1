@@ -1,0 +1,14 @@
+plugins { id 'net.fabricmc.fabric-loom-remap' version '1.14.10' }
+version = '1.0.0'
+group = 'dev.frameprobe'
+base { archivesName = 'frame-probe' }
+repositories { mavenCentral() }
+dependencies {
+    minecraft 'com.mojang:minecraft:1.20.1'
+    mappings 'net.fabricmc:yarn:1.20.1+build.10:v2'
+    modImplementation 'net.fabricmc:fabric-loader:0.19.5'
+    modImplementation 'net.fabricmc.fabric-api:fabric-api:0.92.12+1.20.1'
+}
+loom { splitEnvironmentSourceSets(); mods { 'frame_probe' { sourceSet sourceSets.main; sourceSet sourceSets.client } } }
+tasks.withType(JavaCompile).configureEach { options.release = 17; options.encoding = 'UTF-8' }
+java { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }

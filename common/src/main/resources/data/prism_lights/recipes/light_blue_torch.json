@@ -1,0 +1,19 @@
+{
+  "category": "building",
+  "result": {
+    "count": 4,
+    "item": "prism_lights:light_blue_torch"
+  },
+  "ingredients": [
+    {
+      "item": "minecraft:torch"
+    },
+    {
+      "item": "minecraft:light_blue_dye"
+    },
+    {
+      "item": "minecraft:glowstone_dust"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless"
+}

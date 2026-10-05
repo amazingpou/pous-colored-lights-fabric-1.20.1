@@ -1,0 +1,6 @@
+{
+  "textures": {
+    "lantern": "prism_lights:block/lime_lantern"
+  },
+  "parent": "minecraft:block/template_lantern"
+}

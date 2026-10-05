@@ -1,0 +1,21 @@
+{
+  "replace": false,
+  "values": [
+    "prism_lights:white_candle_cake",
+    "prism_lights:orange_candle_cake",
+    "prism_lights:magenta_candle_cake",
+    "prism_lights:light_blue_candle_cake",
+    "prism_lights:yellow_candle_cake",
+    "prism_lights:lime_candle_cake",
+    "prism_lights:pink_candle_cake",
+    "prism_lights:gray_candle_cake",
+    "prism_lights:light_gray_candle_cake",
+    "prism_lights:cyan_candle_cake",
+    "prism_lights:purple_candle_cake",
+    "prism_lights:blue_candle_cake",
+    "prism_lights:brown_candle_cake",
+    "prism_lights:green_candle_cake",
+    "prism_lights:red_candle_cake",
+    "prism_lights:black_candle_cake"
+  ]
+}

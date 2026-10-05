@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "frame_probe",
+  "version": "1.0.0",
+  "name": "Isolated Frame Probe",
+  "environment": "client",
+  "entrypoints": {
+    "client": [
+      "dev.frameprobe.FrameProbe"
+    ]
+  },
+  "mixins": [
+    "frameprobe.mixins.json"
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "1.20.1",
+    "fabric-api": "*",
+    "java": ">=17"
+  }
+}

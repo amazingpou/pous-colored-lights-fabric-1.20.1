@@ -1,0 +1,6 @@
+{
+  "textures": {
+    "lantern": "prism_lights:block/blue_lantern"
+  },
+  "parent": "minecraft:block/template_hanging_lantern"
+}

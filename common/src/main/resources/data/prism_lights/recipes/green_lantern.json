@@ -1,0 +1,21 @@
+{
+  "category": "building",
+  "result": {
+    "count": 1,
+    "item": "prism_lights:green_lantern"
+  },
+  "pattern": [
+    "III",
+    "ITI",
+    "III"
+  ],
+  "key": {
+    "T": {
+      "item": "prism_lights:green_torch"
+    },
+    "I": {
+      "item": "minecraft:iron_nugget"
+    }
+  },
+  "type": "minecraft:crafting_shaped"
+}

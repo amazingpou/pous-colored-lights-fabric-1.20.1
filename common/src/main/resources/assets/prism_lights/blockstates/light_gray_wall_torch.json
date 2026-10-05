@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=east": {
+      "model": "prism_lights:block/light_gray_wall_torch"
+    },
+    "facing=west": {
+      "model": "prism_lights:block/light_gray_wall_torch",
+      "y": 180
+    },
+    "facing=south": {
+      "model": "prism_lights:block/light_gray_wall_torch",
+      "y": 90
+    },
+    "facing=north": {
+      "model": "prism_lights:block/light_gray_wall_torch",
+      "y": 270
+    }
+  }
+}

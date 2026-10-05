@@ -1,0 +1,6 @@
+{
+  "textures": {
+    "all": "prism_lights:block/gray_redstone_prism"
+  },
+  "parent": "minecraft:block/cube_all"
+}

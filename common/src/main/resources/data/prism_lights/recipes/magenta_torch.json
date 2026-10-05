@@ -1,0 +1,19 @@
+{
+  "category": "building",
+  "result": {
+    "count": 4,
+    "item": "prism_lights:magenta_torch"
+  },
+  "ingredients": [
+    {
+      "item": "minecraft:torch"
+    },
+    {
+      "item": "minecraft:magenta_dye"
+    },
+    {
+      "item": "minecraft:glowstone_dust"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless"
+}

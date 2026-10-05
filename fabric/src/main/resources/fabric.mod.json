@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "prism_lights",
+  "version": "${version}",
+  "name": "Pou's Colored Lights",
+  "description": "Colored lights for minecraft",
+  "authors": [
+    "Pou"
+  ],
+  "license": "MIT",
+  "icon": "assets/prism_lights/icon.png",
+  "environment": "*",
+  "accessWidener": "prism_lights.accesswidener",
+  "mixins": [
+    {
+      "config": "prism_lights.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "entrypoints": {
+    "main": [
+      "dev.prismlights.fabric.PrismFabric"
+    ],
+    "client": [
+      "dev.prismlights.fabric.PrismFabricClient"
+    ]
+  },
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "1.20.1",
+    "java": ">=17",
+    "fabric-api": ">=0.92.12+1.20.1"
+  }
+}

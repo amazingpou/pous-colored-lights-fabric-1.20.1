@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "hanging=true": {
+      "model": "prism_lights:block/blue_lantern_hanging"
+    },
+    "hanging=false": {
+      "model": "prism_lights:block/blue_lantern"
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "textures": {
+    "layer0": "prism_lights:block/lime_torch"
+  },
+  "parent": "minecraft:item/generated"
+}

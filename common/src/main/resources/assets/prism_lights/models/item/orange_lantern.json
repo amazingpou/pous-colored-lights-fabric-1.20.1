@@ -1,0 +1,6 @@
+{
+  "textures": {
+    "layer0": "prism_lights:item/orange_lantern"
+  },
+  "parent": "minecraft:item/generated"
+}

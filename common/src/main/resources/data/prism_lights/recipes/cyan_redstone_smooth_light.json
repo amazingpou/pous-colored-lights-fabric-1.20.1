@@ -1,0 +1,16 @@
+{
+  "category": "building",
+  "result": {
+    "count": 1,
+    "item": "prism_lights:cyan_redstone_smooth_light"
+  },
+  "ingredients": [
+    {
+      "item": "prism_lights:cyan_smooth_light"
+    },
+    {
+      "item": "minecraft:redstone"
+    }
+  ],
+  "type": "minecraft:crafting_shapeless"
+}

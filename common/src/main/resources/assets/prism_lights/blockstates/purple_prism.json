@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=true": {
+      "model": "prism_lights:block/purple_prism"
+    },
+    "active=false": {
+      "model": "prism_lights:block/purple_prism_off"
+    }
+  }
+}

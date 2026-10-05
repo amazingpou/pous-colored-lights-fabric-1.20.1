@@ -1,0 +1,6 @@
+{
+  "textures": {
+    "all": "prism_lights:block/purple_prism_off"
+  },
+  "parent": "minecraft:block/cube_all"
+}

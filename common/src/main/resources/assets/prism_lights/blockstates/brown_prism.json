@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "active=true": {
+      "model": "prism_lights:block/brown_prism"
+    },
+    "active=false": {
+      "model": "prism_lights:block/brown_prism_off"
+    }
+  }
+}
